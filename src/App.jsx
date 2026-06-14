@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react'
-import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
+import { HashRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import DeckDashboard from './components/DeckDashboard'
 import StudyView from './components/StudyView'
 import CardEditor from './components/CardEditor'
@@ -75,9 +75,9 @@ function App() {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <BrowserRouter>
+      <HashRouter>
         <AppContent />
-      </BrowserRouter>
+      </HashRouter>
     </ThemeContext.Provider>
   )
 }
