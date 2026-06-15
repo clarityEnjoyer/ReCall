@@ -769,7 +769,7 @@ export default function CardEditor() {
         </div>
       ) : (
         <div className="card-list stagger-children">
-          {cards.map(card => (
+          {[...cards].reverse().map(card => (
             <div key={card.id} className="card-item surface" id={`card-${card.id}`}>
               <div className="card-item-content">
                 <span className="card-item-front" dangerouslySetInnerHTML={{ __html: card.front }} />
