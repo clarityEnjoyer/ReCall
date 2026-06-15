@@ -713,12 +713,71 @@
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
   .sidebar {
+    width: 100%;
+    min-height: auto;
+    height: 64px;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    top: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-md);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+  }
+
+  .sidebar-header {
     display: none;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    gap: var(--space-sm);
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    flex: 1;
+  }
+
+  .nav-link {
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.75rem;
+    align-items: center;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .nav-icon {
+    font-size: 1.25rem;
+    width: auto;
+    margin: 0;
+  }
+
+  .sidebar-footer {
+    border-top: none;
+    padding-top: 0;
+    margin-left: var(--space-sm);
+  }
+
+  .theme-toggle span:last-child {
+    display: none; /* Hide the text "Dark/Light Mode" on mobile, only show icon */
+  }
+
+  .theme-toggle {
+    padding: var(--space-sm);
+    border-radius: var(--radius-full);
+    min-height: auto;
   }
 
   .main-content {
     margin-left: 0;
-    padding: var(--space-md);
+    padding: var(--space-md) var(--space-md) 80px var(--space-md); /* Add bottom padding so content isn't covered by bottom bar */
   }
 
   .deck-grid {

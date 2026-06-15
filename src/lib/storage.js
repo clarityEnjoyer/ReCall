@@ -87,17 +87,9 @@ export async function updateDeck(id, changes) {
  */
 export async function deleteDeck(id) {
   await db.transaction('rw', [db.decks, db.cards, db.reviewLogs, db.studySessions], async () => {
-    // Remove all related cards
-    const cardIds = await db.cards
-      .where('deckId')
-      .equals(id)
-      .primaryKeys();
+    // Remove review logs for those cards using the indexed deckId
+    await db.reviewLogs.where('deckId').equals(id).delete();
     await db.cards.where('deckId').equals(id).delete();
-
-    // Remove review logs for those cards
-    if (cardIds.length > 0) {
-      await db.reviewLogs.where('cardId').anyOf(cardIds).delete();
-    }
 
     // Remove study sessions
     await db.studySessions.where('deckId').equals(id).delete();
@@ -343,17 +335,16 @@ export async function getSessionsByDeck(deckId) {
  * }>}
  */
 export async function getDeckStats(deckId) {
-  const [allCards, dueCardsList, reviewLogs] = await Promise.all([
+  const [allCards, dueCardsList, totalReviews] = await Promise.all([
     db.cards.where('deckId').equals(deckId).toArray(),
     getDueCards(deckId),
-    db.reviewLogs.where('deckId').equals(deckId).toArray(),
+    db.reviewLogs.where('deckId').equals(deckId).count(),
   ]);
 
   const totalCards = allCards.length;
   const dueCards = dueCardsList.length;
   const newCards = allCards.filter((c) => c.state === 0).length;
   const masteredCards = allCards.filter((c) => c.state === 2).length; // State.Review is 2
-  const totalReviews = reviewLogs.length;
 
   // Average retention: mean retrievability across all non-new cards
   const nonNewCards = allCards.filter((c) => c.state !== 0 && c.lastReview);
@@ -387,10 +378,10 @@ export async function getDeckStats(deckId) {
 // ---------------------------------------------------------------------------
 
 /**
- * Calculate total study time (in hours) for a deck from completed sessions.
+ * Calculate total study time (in minutes) for a deck from completed sessions.
  *
  * @param {number} deckId
- * @returns {Promise<number>} Total hours studied (rounded to 2 decimal places)
+ * @returns {Promise<number>} Total minutes studied
  */
 export async function getDeckStudyTime(deckId) {
   const sessions = await db.studySessions
@@ -422,50 +413,44 @@ export async function getDeckStudyTime(deckId) {
  * @returns {Promise<number>} Number of consecutive study days (0 if none)
  */
 export async function getStudyStreak() {
-  const allLogs = await db.reviewLogs.toArray();
-
-  if (allLogs.length === 0) return 0;
-
-  // Build a Set of unique study day strings (YYYY-MM-DD in local time)
-  const studyDays = new Set(
-    allLogs.map((log) => {
-      const d = new Date(log.reviewedAt);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    })
-  );
-
-  // Start from today and count consecutive days backwards
+  // Start from today and yesterday
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  let streak = 0;
-  let cursor = new Date(today);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
 
-  // Allow the streak to start from today or yesterday
-  // (if the user hasn't studied today yet, the streak still counts)
-  const todayStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+  const uniqueDays = new Set();
 
-  if (!studyDays.has(todayStr)) {
-    // Check yesterday — if yesterday is also missing, streak is 0
-    cursor.setDate(cursor.getDate() - 1);
-    const yesterdayStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
-    if (!studyDays.has(yesterdayStr)) {
-      return 0;
-    }
-  }
+  // Query in reverse chronological order, stopping at the first gap > 1 day
+  await db.reviewLogs
+    .orderBy('reviewedAt')
+    .reverse()
+    .each((log) => {
+      const d = new Date(log.reviewedAt);
+      d.setHours(0, 0, 0, 0);
+      const dateStr = d.toDateString();
 
-  // Count consecutive days
-  while (true) {
-    const dateStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
-    if (studyDays.has(dateStr)) {
-      streak += 1;
-      cursor.setDate(cursor.getDate() - 1);
-    } else {
-      break;
-    }
-  }
+      if (uniqueDays.size === 0) {
+        // If the most recent review is older than yesterday, the streak is 0
+        if (d.getTime() < yesterday.getTime()) {
+          return false; // Stop iteration
+        }
+      } else {
+        // Check if there's a gap between the last added date and this one
+        const daysArray = Array.from(uniqueDays);
+        const lastDay = new Date(daysArray[daysArray.length - 1]);
+        const diffDays = Math.round((lastDay.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
 
-  return streak;
+        if (diffDays > 1) {
+          return false; // Stop iteration
+        }
+      }
+
+      uniqueDays.add(dateStr);
+    });
+
+  return uniqueDays.size;
 }
 
 // ---------------------------------------------------------------------------

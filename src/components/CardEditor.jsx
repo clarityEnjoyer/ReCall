@@ -7,10 +7,26 @@ export default function CardEditor() {
   const navigate = useNavigate()
   const [deck, setDeck] = useState(null)
   const [cards, setCards] = useState([])
-  const [front, setFront] = useState('')
-  const [back, setBack] = useState('')
+  const [front, setFront] = useState(() => {
+    return localStorage.getItem(`recall-draft-front-${deckId}`) || ''
+  })
+  const [back, setBack] = useState(() => {
+    return localStorage.getItem(`recall-draft-back-${deckId}`) || ''
+  })
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (deckId) {
+      localStorage.setItem(`recall-draft-front-${deckId}`, front)
+    }
+  }, [front, deckId])
+
+  useEffect(() => {
+    if (deckId) {
+      localStorage.setItem(`recall-draft-back-${deckId}`, back)
+    }
+  }, [back, deckId])
 
   // Web Speech API Support
   const SpeechRecognitionClass = window.webkitSpeechRecognition || window.SpeechRecognition

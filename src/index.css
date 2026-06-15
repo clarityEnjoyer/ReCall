@@ -342,11 +342,11 @@ input, textarea, select {
   letter-spacing: 0.03em;
 }
 
-.badge-lavender { background: var(--color-lavender-light); color: #5B4A8A; }
-.badge-mint { background: var(--color-mint-light); color: #2A6A4A; }
-.badge-peach { background: var(--color-peach-light); color: #8A5A2A; }
-.badge-sky { background: var(--color-sky-light); color: #3A5A8A; }
-.badge-rose { background: var(--color-rose-light); color: #8A3A42; }
+.badge-lavender { background: var(--color-lavender-light); color: #453573; }
+.badge-mint { background: var(--color-mint-light); color: #174A2E; }
+.badge-peach { background: var(--color-peach-light); color: #63390F; }
+.badge-sky { background: var(--color-sky-light); color: #1B3D6B; }
+.badge-rose { background: var(--color-rose-light); color: #6B1C23; }
 
 /* Progress Bar */
 .progress-bar {
@@ -779,6 +779,31 @@ input, textarea, select {
   color: var(--text-secondary);
   font-size: 0.8rem;
   font-weight: bold;
+}
+
+/* ---- Reduced Motion Support ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+  
+  .mic-btn.active {
+    animation: none !important;
+    border: 2px solid var(--color-rose-dark) !important;
+  }
+  
+  .input.textarea.voice-focused {
+    animation: none !important;
+    box-shadow: 0 0 0 3px var(--color-peach) !important;
+  }
 }
 
 
